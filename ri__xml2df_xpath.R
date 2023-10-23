@@ -76,27 +76,34 @@ ri=paste0(mypath,"RI_13alles.csv")
 data <- read.csv(ri,header = TRUE, sep = '\t')
 
 
+####without Chmel and Suppl
+ri=paste0(mypath,"RI_13alles.csv")
+data <- read.csv(ri,header = TRUE, sep = '\t')
+
+
 n_data <- length(data$identifier)
 doc_id <- vector("character", length=n_data)
 
 for(d in 1:n_data) {
   d_id <- as.character(data[d,]$identifier)
-  if(grepl("Chmel", d_id, fixed=TRUE)){
-    doc_id[d] <- str_split(d_id,"n. ")[[1]][2] 
-  }else{
-    docs <- strsplit(as.character(data[d,]$sorting),"_")
-    band <- as.integer(docs[[1]][2])
-    regest <- as.integer(docs[[1]][5]) 
-    if(is.na(regest)){regest <- as.character(docs[[1]][5])}
+  if(data[d,]$urn!="" && !(str_detect(d_id,"Chmel") || str_detect(d_id," Suppl.")) ){
+    d_urn <- data[d,]$urn
+    docs <- strsplit(as.character(d_urn),"_")
+    band <- docs[[1]][5]
+    regest <- docs[[1]][8]
     doc_id[d] <- paste0(band,"-",regest)
+    if(d%%10000==0) {print(doc_id[d])}
+  }else{
+    doc_id[d]=NA
   }
-  if(d%%10000==0) {print(doc_id[d])}
 }
+
 
 data$doc_id <- doc_id
 
 doc_df <- subset.data.frame(data, select = c(doc_id,identifier,locality_string,start_date,end_date,summary))
+doc_df <- doc_df[!is.na(doc_df$doc_id),]
 
-filename = paste0(mypath,"dati_df.Rdata")
+filename = paste0(mypath,"dati_dfnoChmelSuppl.Rdata")
 save(df_index, df, e_df, doc_df,file=filename )
 
